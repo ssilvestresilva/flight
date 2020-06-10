@@ -16,7 +16,7 @@ import lombok.Getter;
 @Data
 @Getter
 @Entity
-@Table(name = "flight", schema = "public")
+@Table(name = "flight")
 public class Flight {
 	
 	@Id

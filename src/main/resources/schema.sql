@@ -1,17 +1,10 @@
--- Database: db_flight
+--DROP DATABASE IF EXISTS db_flight;
 
--- DROP DATABASE db_flight;
+--CREATE DATABASE db_flight;
+CREATE USER flight WITH PASSWORD 'flight';
+GRANT ALL PRIVILEGES ON DATABASE db_flight TO flight;
 
---CREATE DATABASE db_flight
---    WITH 
---    OWNER = flight
---    ENCODING = 'UTF8'
---    LC_COLLATE = 'Portuguese_Brazil.1252'
---    LC_CTYPE = 'Portuguese_Brazil.1252'
---    TABLESPACE = pg_default
---    CONNECTION LIMIT = -1;
-
--- DROP TABLE public.flight;
+\connect app
 
 CREATE TABLE public.flight
 (
@@ -25,4 +18,6 @@ CREATE TABLE public.flight
     date_to 			timestamp with time zone,
     CONSTRAINT flight_pkey 
     PRIMARY KEY (id)
-)
+);
+
+ALTER TABLE public.flight OWNER to flight;
