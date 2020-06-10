@@ -28,6 +28,8 @@ import org.springframework.util.StringUtils;
 import com.cocus.flight.client.FlightClient;
 import com.cocus.flight.dto.FlightFilterDTO;
 import com.cocus.flight.dto.FlightInfoDTO;
+import com.cocus.flight.model.Flight;
+import com.cocus.flight.repository.FlightRepository;
 
 @Service
 public class FlightService {
@@ -47,6 +49,37 @@ public class FlightService {
 	private static final String[] AIRLINES = {"TP", "FR"};
 	private static final String DATE_FORMAT = "dd/MM/yyyy";
 	
+	@Autowired
+	private FlightRepository flightRepository;
+	
+	public List<FlightInfoDTO> getAll() {
+		List<FlightInfoDTO> result = new ArrayList<>();
+		this.flightRepository.findAll().forEach(r -> result.add(modelToDTO(r)));
+		return result;
+	}
+	
+	private FlightInfoDTO modelToDTO(Flight r) {
+		return FlightInfoDTO.builder()
+				.departure(String.valueOf(r.getDeparture()))
+				.arrival(String.valueOf(r.getArrival()))
+				.currency(r.getCurrency())
+				.priceAvarage(r.getPriceAvarage())
+				.bagsPrice(formatBagsPrice(r.getBagsPrice()))
+				.dateFrom(r.getDateFrom())
+				.dateTo(r.getDateTo())
+				.build();
+	}
+
+	private Map<String, Double> formatBagsPrice(String bagsPrice) {
+		Map<String, Double> r = new HashMap<>();
+		String[] bag = bagsPrice.split(",");
+		for (String b : bag) {
+		    String[] keyValue = b.split("=");
+		    r.put(keyValue[0].trim().replaceAll("[\\[\\](){}]",""), Double.valueOf(keyValue[1].replaceAll("[\\[\\](){}]","")));
+		}
+		return r;
+	}
+
 	public List<FlightInfoDTO> filter(FlightFilterDTO filter) throws URISyntaxException, IOException, InterruptedException, JSONException {
         List<FlightInfoDTO> result = new ArrayList<>();
         List<String> airLines = List.of(AIRLINES);
@@ -60,9 +93,25 @@ public class FlightService {
 			}
 		});
         LOGGER.info("FlightService.getAll - Found {} elements.", result.size());
+        
+        if (!result.isEmpty()) {
+        	result.forEach(a -> this.flightRepository.save(dtoToModel(a, new Flight())));
+        }
+        
         return result;
     }
 	
+	private Flight dtoToModel(FlightInfoDTO a, Flight fl) {
+		fl.setDeparture(a.getDeparture());
+		fl.setArrival(a.getArrival());
+		fl.setCurrency(a.getCurrency());
+		fl.setPriceAvarage(a.getPriceAvarage());
+		fl.setBagsPrice(a.getBagsPrice().toString());
+		fl.setDateFrom(a.getDateFrom());
+		fl.setDateTo(a.getDateTo());
+		return fl;
+	}
+
 	private List<String> convertJson(JSONArray jsonArray) throws JSONException {
 		List<String> list = new ArrayList<>();
 		for (int i = 0; i < jsonArray.length(); i++) {
@@ -149,7 +198,8 @@ public class FlightService {
 	
 	@Transactional(propagation = Propagation.REQUIRED)
     public void delete() {
+		this.flightRepository.deleteAll();
     	LOGGER.info("FlightService.delete - Flights deleted.");
     }
-	
+
 }
